@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "2023bcd0015/2023bcd0015_2023bcd0015"
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        IMAGE_BACKEND = "2023bcd0015/2023bcd15_backend"
+        IMAGE_FRONTEND = "2023bcd0015/2023bcd15_frontend"
     }
 
     stages {
@@ -14,21 +15,34 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Backend') {
             steps {
-                sh "docker build -t $IMAGE_NAME ."
+                dir('Backend') {
+                    sh 'docker build -t $IMAGE_BACKEND .'
+                }
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Build Frontend') {
             steps {
-                sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                dir('Frontend') {
+                    sh 'docker build -t $IMAGE_FRONTEND .'
+                }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Login to DockerHub') {
             steps {
-                sh "docker push $IMAGE_NAME"
+                sh """
+                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                """
+            }
+        }
+
+        stage('Push Images') {
+            steps {
+                sh 'docker push $IMAGE_BACKEND'
+                sh 'docker push $IMAGE_FRONTEND'
             }
         }
     }
